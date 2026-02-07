@@ -1,0 +1,1274 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Command Architect</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #030712; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+
+        /* Advanced Blur Effects */
+        .blur-content {
+            filter: blur(8px);
+            opacity: 0.4;
+            user-select: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .blur-content:hover {
+            filter: blur(0);
+            opacity: 1;
+            background: transparent;
+        }
+
+        /* Syntax Highlighting */
+        .syntax-keyword { color: #c084fc; font-weight: 700; } /* Purple: Router, Interface */
+        .syntax-method  { color: #38bdf8; font-weight: 600; } /* Blue: ip route, switchport */
+        .syntax-value   { color: #4ade80; } /* Green: IPs, VLAN IDs */
+        .syntax-string  { color: #fbbf24; } /* Amber: Names */
+        .syntax-header  { color: #818cf8; font-weight: 800; letter-spacing: 0.05em; border-bottom: 1px solid rgba(129, 140, 248, 0.3); padding-bottom: 4px; display: inline-block; margin-top: 1rem; margin-bottom: 0.5rem; }
+
+        /* Challenge Mode Inputs */
+        .challenge-input {
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-bottom: 2px solid #6366f1;
+            color: #e2e8f0;
+            text-align: center;
+            padding: 0 2px;
+            margin: 0 2px;
+            border-radius: 4px 4px 0 0;
+            outline: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+            min-width: 20px;
+        }
+        .challenge-input:focus {
+            background: rgba(99, 102, 241, 0.2);
+            border-bottom-color: #818cf8;
+        }
+        .challenge-input.correct {
+            color: #34d399; /* Emerald 400 */
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            font-weight: bold;
+        }
+        .challenge-input.incorrect {
+            color: #f87171; /* Red 400 */
+            border-bottom-color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        /* Glassmorphism Background */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .mesh-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 25%);
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="text-slate-200 h-screen flex flex-col overflow-hidden selection:bg-indigo-500/30">
+
+    <div class="mesh-bg"></div>
+
+    <div id="app" class="h-full flex flex-col md:flex-row">
+        
+        <!-- Mobile Menu Overlay -->
+        <div v-if="mobileMenuOpen" class="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden" @click="mobileMenuOpen = false"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside :class="['fixed md:static inset-y-0 left-0 z-50 w-80 glass-panel border-r-0 border-r border-white/5 flex flex-col flex-shrink-0 transition-transform duration-300 shadow-2xl z-50', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                        <i class="ph-duotone ph-cpu text-indigo-400 text-3xl"></i>
+                        CCNA<span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">ARCHITECT</span>
+                    </h1>
+                </div>
+                <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+
+            <!-- Search -->
+            <div class="p-4 border-b border-white/5">
+                <div class="relative group">
+                    <input 
+                        ref="searchInput"
+                        v-model="searchQuery" 
+                        type="text" 
+                        :placeholder="t.searchPlaceholder" 
+                        class="w-full bg-black/30 border border-white/10 text-slate-200 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-3 pl-10 placeholder-slate-500 transition-all group-hover:border-white/20 shadow-inner"
+                    >
+                    <i class="ph ph-magnifying-glass text-slate-500 absolute left-3 top-3.5 group-focus-within:text-indigo-400 transition-colors"></i>
+                    <div class="absolute right-3 top-3.5 flex gap-1">
+                        <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-slate-500 bg-white/5 rounded border border-white/10">Ctrl K</kbd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto p-3 space-y-6">
+                
+                <!-- Favorites Section -->
+                <div v-if="pinnedSections.length > 0" class="animate-slide-up">
+                    <h3 class="px-3 text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <i class="ph-fill ph-push-pin"></i> {{ t.favorites }}
+                    </h3>
+                    <div class="space-y-1">
+                        <a 
+                            v-for="section in pinnedSections" 
+                            :key="'fav-' + section.id"
+                            @click="scrollToSection(section.id); mobileMenuOpen = false"
+                            class="group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all bg-indigo-500/10 text-indigo-200 border border-indigo-500/20 hover:bg-indigo-500/20"
+                        >
+                            <span class="truncate">{{ section.title }}</span>
+                            <i class="ph-fill ph-star text-yellow-400 text-xs"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- All Sections -->
+                <div>
+                    <h3 class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{{ t.library }}</h3>
+                    <div class="space-y-1">
+                        <a 
+                            v-for="(section, index) in filteredSections" 
+                            :key="section.id"
+                            @click="scrollToSection(section.id); mobileMenuOpen = false"
+                            :class="['group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200', activeSection === section.id ? 'bg-white/10 text-white shadow-lg shadow-black/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-100']"
+                        >
+                            <span class="truncate flex items-center gap-3">
+                                <span class="text-xs font-mono opacity-30">{{ (index + 1).toString().padStart(2, '0') }}</span>
+                                {{ section.title }}
+                            </span>
+                            <i v-if="pinnedIds.includes(section.id)" class="ph-fill ph-star text-yellow-500/50 text-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <!-- Added @input event listener for delegation to handle challenge inputs -->
+        <main class="flex-1 overflow-y-auto relative scroll-smooth" id="main-content" @scroll="handleScroll" @input="handleChallengeInput">
+            
+            <!-- Mobile Header -->
+            <div class="md:hidden p-4 glass-panel border-b border-white/5 flex justify-between items-center sticky top-0 z-30">
+                <button @click="mobileMenuOpen = true" class="text-slate-300"><i class="ph ph-list text-2xl"></i></button>
+                <span class="font-bold text-white tracking-widest">CCNA</span>
+                <div class="w-8"></div>
+            </div>
+
+            <div class="max-w-6xl mx-auto p-4 md:p-8 space-y-8 pb-32">
+                
+                <!-- Dashboard / Tools -->
+                <div class="glass-panel p-1 rounded-2xl sticky md:static top-2 z-20 shadow-2xl mx-auto max-w-4xl ring-1 ring-white/10">
+                    <div class="bg-black/40 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                        
+                        <!-- Mode Selector -->
+                        <div class="flex bg-black/50 p-1 rounded-lg border border-white/5 w-full md:w-auto">
+                            <button 
+                                @click="viewMode = 'standard'"
+                                :class="['flex-1 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2', viewMode === 'standard' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+                            >
+                                <i class="ph-bold ph-book-open"></i> {{ t.read }}
+                            </button>
+                            <button 
+                                @click="viewMode = 'explain'"
+                                :class="['flex-1 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2', viewMode === 'explain' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+                                :title="t.explainTooltip"
+                            >
+                                <i class="ph-bold ph-question"></i> {{ t.explain }}
+                            </button>
+                            <button 
+                                @click="viewMode = 'recall'"
+                                :class="['flex-1 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2', viewMode === 'recall' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+                                :title="t.recallTooltip"
+                            >
+                                <i class="ph-bold ph-code"></i> {{ t.recall }}
+                            </button>
+                            <button 
+                                @click="viewMode = 'challenge'"
+                                :class="['flex-1 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2', viewMode === 'challenge' ? 'bg-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+                                :title="t.challengeTooltip"
+                            >
+                                <i class="ph-bold ph-target"></i> {{ t.challenge }}
+                            </button>
+                            <button 
+                                @click="viewMode = 'data'"
+                                :class="['flex-1 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2', viewMode === 'data' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+                                :title="t.dataTooltip"
+                            >
+                                <i class="ph-bold ph-database"></i> {{ t.data }}
+                            </button>
+                        </div>
+                        
+                        <!-- Language Toggle -->
+                        <div class="flex items-center gap-2 bg-black/50 p-1 rounded-lg border border-white/5">
+                            <button 
+                                @click="toggleLanguage('en')"
+                                :class="['px-3 py-1.5 rounded text-xs font-bold transition-all', language === 'en' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300']"
+                            >
+                                EN
+                            </button>
+                            <button 
+                                @click="toggleLanguage('fr')"
+                                :class="['px-3 py-1.5 rounded text-xs font-bold transition-all', language === 'fr' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300']"
+                            >
+                                FR
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Sections -->
+                <div 
+                    v-for="(section, index) in filteredSections" 
+                    :key="section.id" 
+                    :id="section.id"
+                    class="scroll-mt-32 md:scroll-mt-8 animate-slide-up"
+                    :style="{ animationDelay: `${index * 50}ms` }"
+                >
+                    <div class="flex items-center justify-between mb-3 px-2">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-bold text-slate-100 tracking-tight flex items-center gap-2">
+                                <span class="text-indigo-400">#</span> {{ section.title }}
+                            </h2>
+                            <button @click="togglePin(section.id)" class="text-slate-600 hover:text-yellow-400 transition-colors" :title="pinnedIds.includes(section.id) ? 'Unpin' : 'Pin to top'">
+                                <i :class="pinnedIds.includes(section.id) ? 'ph-fill ph-star text-yellow-400' : 'ph-bold ph-star'"></i>
+                            </button>
+                        </div>
+                        <button 
+                            @click="copySection(section.rawCode)"
+                            class="text-xs flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-white/5 transition-all active:scale-95"
+                        >
+                            <i v-if="!copiedState[section.id]" class="ph-bold ph-copy"></i>
+                            <i v-else class="ph-bold ph-check text-emerald-400"></i>
+                            <span class="hidden sm:inline font-medium">{{ copiedState[section.id] ? t.copied : t.copy }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Code Block -->
+                    <div class="glass-panel rounded-xl overflow-hidden relative group ring-1 ring-white/10 shadow-xl">
+                        
+                        <!-- Mac-style dots -->
+                        <div class="bg-black/40 px-4 py-2 flex items-center gap-2 border-b border-white/5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                            <div class="ml-auto text-[10px] font-mono text-slate-600 uppercase">ios-xe</div>
+                        </div>
+
+                        <div class="p-5 overflow-x-auto bg-black/20">
+                            <div class="code-font text-xs md:text-sm leading-7 min-w-[600px] md:min-w-0">
+                                <template v-for="(line, idx) in parseCode(section.rawCode)" :key="idx">
+                                    <div class="group/line table-row hover:bg-white/5 transition-colors w-full duration-75">
+                                        <!-- Line Number -->
+                                        <div class="table-cell select-none text-slate-700 text-right pr-4 w-10 border-r border-white/5 group-hover/line:text-slate-500 transition-colors text-[10px] py-0.5 align-middle">
+                                            {{ idx + 1 }}
+                                        </div>
+                                        
+                                        <!-- Code Content -->
+                                        <div class="table-cell pl-4 w-full whitespace-pre align-middle py-0.5" v-html="highlightLine(line)"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="border-t border-white/10 pt-10 mt-12 pb-10 text-center">
+                    <p class="text-slate-600 text-xs font-mono tracking-widest uppercase">
+                        {{ t.footerQuote }}
+                    </p>
+                </footer>
+            </div>
+        </main>
+
+        <!-- Toast Notification -->
+        <div 
+            v-if="toast.show" 
+            class="fixed bottom-10 right-10 glass-panel px-6 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3 transition-all z-50 animate-slide-up"
+        >
+            <div class="bg-emerald-500/20 p-1.5 rounded-full">
+                <i class="ph-fill ph-check-circle text-emerald-400 text-lg"></i>
+            </div>
+            <span class="font-medium text-sm text-white">{{ t.toastCopied }}</span>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const searchInput = ref(null);
+                const searchQuery = ref('');
+                const activeSection = ref('');
+                const copiedState = ref({});
+                const mobileMenuOpen = ref(false);
+                const toast = ref({ show: false });
+                
+                // Persistence State
+                const viewMode = ref(localStorage.getItem('ccna_view_mode') || 'standard');
+                const pinnedIds = ref(JSON.parse(localStorage.getItem('ccna_pinned_ids') || '[]'));
+                const language = ref(localStorage.getItem('ccna_language') || 'en');
+
+                // Watchers for persistence
+                watch(viewMode, (newVal) => localStorage.setItem('ccna_view_mode', newVal));
+                watch(pinnedIds, (newVal) => localStorage.setItem('ccna_pinned_ids', JSON.stringify(newVal)), { deep: true });
+                watch(language, (newVal) => localStorage.setItem('ccna_language', newVal));
+
+                // UI Translations
+                const translations = {
+                    en: {
+                        searchPlaceholder: 'Search or Ctrl+K...',
+                        favorites: 'Favorites',
+                        library: 'Library',
+                        read: 'Read',
+                        explain: 'Explain',
+                        recall: 'Recall',
+                        challenge: 'Challenge',
+                        data: 'Data',
+                        explainTooltip: 'Hides comments, keeps code',
+                        recallTooltip: 'Hides code, keeps comments',
+                        challengeTooltip: 'Fill in the blanks',
+                        dataTooltip: 'Hides commands, keeps values',
+                        copy: 'Copy',
+                        copied: 'Copied',
+                        footerQuote: 'Mastery Requires Repetition',
+                        toastCopied: 'Copied to clipboard'
+                    },
+                    fr: {
+                        searchPlaceholder: 'Rechercher ou Ctrl+K...',
+                        favorites: 'Favoris',
+                        library: 'Bibliothèque',
+                        read: 'Lire',
+                        explain: 'Expliquer',
+                        recall: 'Rappel',
+                        challenge: 'Défi',
+                        data: 'Données',
+                        explainTooltip: 'Cache les commentaires, garde le code',
+                        recallTooltip: 'Cache le code, garde les commentaires',
+                        challengeTooltip: 'Remplir les blancs',
+                        dataTooltip: 'Cache les commandes, garde les valeurs',
+                        copy: 'Copier',
+                        copied: 'Copié',
+                        footerQuote: 'La maîtrise exige la répétition',
+                        toastCopied: 'Copié dans le presse-papiers'
+                    }
+                };
+
+                const t = computed(() => translations[language.value]);
+
+                const toggleLanguage = (lang) => {
+                    language.value = lang;
+                };
+
+                // Keyboard Shortcuts
+                onMounted(() => {
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                            e.preventDefault();
+                            searchInput.value.focus();
+                        }
+                    });
+                });
+
+                const sectionsDataEn = [
+                    {
+                        id: 'ssh',
+                        title: 'Management & Access (SSH)',
+                        rawCode: `hostname R1                             #  Sets device hostname to R1
+ip domain-name ntic.ma               #  Sets the domain name for SSH
+username admin secret password       #  Creates local user with encrypted password
+crypto key generate rsa              #  Generates RSA keys required for SSH
+1024                                 #  Specifies key size in bits
+ip ssh version 2                     #  Enables SSH version 2 (More Secure)
+line vty 0 4                         #  Enters config for virtual lines 0-4
+transport input ssh                  #  Allows only SSH connections
+login local                          #  Uses local username database for login`
+                    },
+                    {
+                        id: 'routing',
+                        title: 'Routing (Static & IPv6)',
+                        rawCode: `@Standard
+ip route 192.168.10.0 255.255.255.0 serial 0/0/0    #  Route to network via exit interface
+ip route 192.168.10.0 255.255.255.0 172.16.0.2      #  Route to network via next-hop IP
+
+@Summary Route (Recap)
+# Example: Summarizing 192.168.1.0, 2.0, 3.0 /24 into one /22
+ip route 192.168.0.0 255.255.252.0 serial 0/0/0     #  Single route for multiple subnets
+
+@Floating Static Route (Backup)
+# Different ADs = Different priorities (Lower AD wins)
+ip route 192.168.10.0 255.255.255.0 gig 0/0          #  Primary route (Default AD 1)
+ip route 192.168.10.0 255.255.255.0 fa 0/2 100       #  Backup route 1 (AD 100)
+ip route 192.168.10.0 255.255.255.0 serial 0/0/0 150 #  Backup route 2 (AD 150)
+
+@IPv6 Routing
+ipv6 unicast-routing                 #  Enables IPv6 packet forwarding
+ipv6 route 2001:DB8::/64 serial 0/0 #  IPv6 static route syntax`
+                    },
+                    {
+                        id: 'switching',
+                        title: 'Switching & Inter-VLAN',
+                        rawCode: `@VLAN Configuration
+vlan 10                              #  Creates VLAN ID 10
+name IT                              #  Names the VLAN 'IT'
+vlan 20                              #  Creates VLAN ID 20
+name HR                              #  Names the VLAN 'HR'
+
+@Port Assignment
+interface fa 0/1                     #  Selects interface Fa0/1
+switchport mode access               #  Configures port as access (end device)
+switchport access vlan 10            #  Assigns port to VLAN 10
+interface fa 0/2                     #  Selects interface Fa0/2
+switchport mode access               #  Configures port as access
+switchport access vlan 20            #  Assigns port to VLAN 20
+
+@MLS (Multilayer Switch / SVI)
+interface vlan 10                    #  Creates virtual SVI interface for VLAN 10
+ip address 192.168.10.1 255.255.255.0 #  Assigns gateway IP to SVI
+interface vlan 20                    #  Creates virtual SVI interface for VLAN 20
+ip address 192.168.20.1 255.255.255.0 #  Assigns gateway IP to SVI
+
+@Router on a Stick
+interface fa 0/0.10                  #  Creates subinterface for VLAN 10
+encapsulation dot1q 10               #  Enables 802.1Q tagging for VLAN 10
+ip address 192.168.10.1 255.255.255.0 #  Assigns gateway IP
+interface fa 0/0.20                  #  Creates subinterface for VLAN 20
+encapsulation dot1q 20               #  Enables 802.1Q tagging for VLAN 20
+ip address 192.168.20.1 255.255.255.0 #  Assigns gateway IP`
+                    },
+                    {
+                        id: 'port-security',
+                        title: 'Port Security',
+                        rawCode: `@Configuration
+interface fa 0/1                     #  Selects an access port
+switchport mode access               #  Ensures port is access mode (required)
+switchport port-security             #  Enables port security feature
+switchport port-security maximum 2   #  Allows max 2 MAC addresses
+switchport port-security mac-address sticky #  Dynamically learns and saves MACs
+
+@Violation Modes
+switchport port-security violation restrict #  Drops packet, increments counter, sends syslog
+switchport port-security violation shutdown #  (Default) Puts interface in err-disabled state
+switchport port-security violation protect #  Drops packet, no counter, no log
+
+@Verification
+show port-security interface fa 0/1  #  Shows security status for interface
+show port-security address           #  Shows secure MAC table`
+                    },
+                    {
+                        id: 'hsrp',
+                        title: 'First Hop Redundancy (HSRP)',
+                        rawCode: `@Case: Multiple VLANs (Load Balancing)
+# R1 Configuration
+interface g0/0.10                    #  Enter subinterface for VLAN 10
+ip address 192.168.10.1 255.255.255.0 #  Physical IP
+standby 10 ip 192.168.10.254         #  Sets shared Virtual Gateway IP
+standby 10 priority 110              #  Higher priority (110 > 100) makes R1 Active
+standby 10 preempt                   #  Allows R1 to take back Active role if it recovers
+interface gig 0/0.20                 #  Enter subinterface for VLAN 20
+ip address 192.168.20.1 255.255.255.0 #  Physical IP
+standby 20 ip 192.168.20.254         #  Sets shared Virtual Gateway IP
+standby 20 priority 100              #  Lower priority makes R1 Standby for VLAN 20
+standby 20 preempt                   #  Enables preemption
+
+# R2 Configuration
+interface gig 0/0.10                 #  Enter subinterface for VLAN 10
+ip address 192.168.10.2 255.255.255.0 #  Physical IP
+standby 10 ip 192.168.10.254         #  Same Virtual IP
+standby 10 priority 100              #  Lower priority makes R2 Standby for VLAN 10
+standby 10 preempt                   #  Enables preemption
+interface gig 0/0.20                 #  Enter subinterface for VLAN 20
+ip address 192.168.20.2 255.255.255.0 #  Physical IP
+standby 20 ip 192.168.20.254         #  Same Virtual IP
+standby 20 priority 110              #  Higher priority makes R2 Active for VLAN 20
+standby 20 preempt                   #  Allows R2 to take Active role`
+                    },
+                    {
+                        id: 'etherchannel',
+                        title: 'EtherChannel',
+                        rawCode: `@LACP (Open Standard)
+interface range fa 0/1-4             #  Selects range of interfaces
+channel-group 1 mode active          #  Adds ports to group 1 using LACP Active
+interface port-channel 1             #  Enters the logical interface
+switchport mode trunk                #  Configures the bundle as a trunk
+
+@PAgP (Cisco Proprietary)
+interface range fa 0/1-4             #  Selects range of interfaces
+channel-group 1 mode desirable       #  Adds ports to group 1 using PAgP Desirable
+interface port-channel 1             #  Enters the logical interface
+switchport mode trunk                #  Configures the bundle as a trunk`
+                    },
+                    {
+                        id: 'acl',
+                        title: 'ACL (Access Control Lists)',
+                        rawCode: `@Standard ACL
+# Place close to DESTINATION
+access-list 1 permit 192.168.10.0 0.0.0.255 #  Permits source network 192.168.10.0
+access-list 1 deny any               #  Explicitly denies all other traffic
+
+# Named Standard
+ip access-list standard MyACL        #  Creates standard ACL named 'MyACL'
+permit 192.168.10.0 0.0.0.255        #  Permits source network
+deny any                             #  Denies everything else
+
+@Extended ACL
+# Place close to SOURCE
+access-list 100 permit tcp 192.168.10.0 0.0.0.255 any eq 80 #  Permits HTTP (80)
+access-list 100 permit ip any any    #  Permits all other IP traffic
+
+# Named Extended
+ip access-list extended MyExtACL     #  Creates extended ACL named 'MyExtACL'
+permit tcp 192.168.10.0 0.0.0.255 any eq 80 #  Permits HTTP
+permit ip any any                    #  Permits all other traffic
+
+@Applying ACLs
+interface gig 0/0                    #  Selects interface to apply ACL
+ip access-group 1 in                 #  Applies ACL 1 to inbound traffic`
+                    },
+                    {
+                        id: 'nat',
+                        title: 'NAT (Network Address Translation)',
+                        rawCode: `@Interface Setup
+interface gig 0/1                    #  Selects LAN interface
+ip nat inside                        #  Marks interface as Inside (Private)
+interface gig 0/0                    #  Selects WAN interface
+ip nat outside                       #  Marks interface as Outside (Public)
+
+@Static NAT
+# One-to-One mapping
+ip nat inside source static 192.168.1.10 203.0.113.5 #  Maps private IP to public IP
+
+@Dynamic NAT
+# Many-to-Many mapping (requires pool)
+access-list 1 permit 192.168.1.0 0.0.0.255 #  Defines traffic allowed to use NAT
+ip nat pool MyPool 203.0.113.10 203.0.113.20 netmask 255.255.255.0 #  Defines public IP pool
+ip nat inside source list 1 pool MyPool #  Maps ACL list to Pool
+
+@PAT (NAT Overload)
+# Many-to-One mapping (Interface IP)
+access-list 1 permit 192.168.1.0 0.0.0.255 #  Defines traffic allowed to use NAT
+ip nat inside source list 1 interface gig 0/0 overload #  Maps list to WAN interface IP`
+                    },
+                    {
+                        id: 'ospf',
+                        title: 'OSPF',
+                        rawCode: `@OSPFv2 (IPv4)
+router ospf 10                       #  Starts OSPF Process ID 10
+router-id 1.1.1.1                    #  Manually sets unique Router ID
+network 192.168.10.0 0.0.0.255 area 0 #  Advertises network in Area 0
+passive-interface gig 0/0            #  Prevents sending Hello packets on LAN
+default-information originate        #  Advertises 'Gateway of Last Resort' to neighbors
+
+@OSPFv3 (IPv6)
+ipv6 unicast-routing                 #  Enables IPv6 routing globally
+ipv6 router ospf 10                  #  Starts OSPFv3 process
+router-id 1.1.1.1                    #  Sets Router ID (Required for v3)
+interface gig 0/0                    #  Enters interface config
+ipv6 ospf 10 area 0                  #  Enables OSPFv3 directly on interface
+
+@Timers & Cost
+ip ospf hello-interval 10            #  Sets Hello timer to 10s
+ip ospf dead-interval 40             #  Sets Dead timer to 40s
+auto-cost reference-bandwidth 100    #  Sets ref bandwidth (100 Mbps) for calc
+# Or per interface:
+interface gig 0/0                    #  Selects interface
+ip ospf cost 50                      #  Manually overrides link cost
+ip ospf priority 200                 #  Sets DR election priority (Higher wins)`
+                    },
+                    {
+                        id: 'dhcp',
+                        title: 'DHCP',
+                        rawCode: `@DHCPv4 Server (Router 1)
+ip dhcp excluded-address 192.168.1.1 192.168.1.10 #  Excludes IPs .1 to .10
+ip dhcp pool LAN_POOL                #  Creates DHCP pool named LAN_POOL
+network 192.168.1.0 255.255.255.0    #  Defines network to distribute
+default-router 192.168.1.1           #  Sets default gateway for clients
+dns-server 8.8.8.8                   #  Sets DNS server for clients
+domain-name example.com              #  Sets domain name
+lease 1 12 0                         #  Sets lease time (1 Day, 12 Hours)
+
+@DHCP Relay (Router 2)
+interface gig 0/0                    #  Selects LAN interface
+ip helper-address 10.0.0.1           #  Forwards DHCP requests to Server 10.0.0.1
+
+@DHCPv6 / SLAAC
+# Case 1: SLAAC (Stateless Auto-Config) - No DHCP server
+ipv6 unicast-routing                 #  Enables IPv6 routing
+interface gig 0/0                    #  Selects interface
+ipv6 address 2001:db8:acad:1::1/64   #  Configures interface IP (Router Advertisement)
+
+# Case 2: Stateless DHCP (SLAAC for IP, DHCP for DNS)
+ipv6 dhcp pool STATELESS_POOL        #  Creates pool
+dns-server 2001:4860:4860::8888      #  Only provides DNS info
+interface gig 0/0                    #  Selects interface
+ipv6 dhcp server STATELESS_POOL      #  Binds pool to interface
+ipv6 nd other-config-flag            #  Sets 'O' flag (Check DHCP for DNS)
+
+# Case 3: Stateful DHCP (DHCP for everything)
+ipv6 dhcp pool STATEFUL_POOL         #  Creates pool
+address prefix 2001:db8:acad:1::/64 #  Distributes IP addresses
+interface gig 0/0                    #  Selects interface
+ipv6 dhcp server STATEFUL_POOL       #  Binds pool to interface
+ipv6 nd managed-config-flag          #  Sets 'M' flag (Use DHCP for IP)`
+                    },
+                    {
+                        id: 'ntp',
+                        title: 'NTP (Time)',
+                        rawCode: `@Server (Authoritative)
+ntp master 3                         #  Configures device as NTP Server (Stratum 3)
+
+@Client
+ntp server 192.168.1.10              #  Configures device to sync with NTP Server IP
+
+@Verification
+show ntp status                      #  Shows current sync status
+show ntp associations                #  Shows connected NTP servers
+show clock                           #  Displays current system time`
+                    },
+                    {
+                        id: 'ppp',
+                        title: 'PPP (PAP & CHAP)',
+                        rawCode: `@PAP (Clear text password)
+# R1
+username R2 password Cisco           #  Creates user matching remote hostname
+interface serial 0/0/0               #  Selects WAN interface
+encapsulation ppp                    #  Sets encapsulation type to PPP
+ppp authentication pap               #  Enables PAP authentication
+ppp pap sent-username R1 password cisco #  Sends credentials to R2
+# R2
+username R1 password Cisco           #  Creates user matching remote hostname
+interface serial 0/0/0               #  Selects WAN interface
+encapsulation ppp                    #  Sets encapsulation type to PPP
+ppp authentication pap               #  Enables PAP authentication
+ppp pap sent-username R2 password Cisco #  Sends credentials to R1
+
+@CHAP (Encrypted - 3-Way Handshake)
+# R1
+hostname Router1                     #  Hostname MUST match what R2 expects
+username Router2 password CiscoPass #  Password MUST match on both sides
+interface serial 0/0/0               #  Selects WAN interface
+encapsulation ppp                    #  Sets encapsulation type to PPP
+ppp authentication chap              #  Enables CHAP authentication
+# R2
+hostname Router2                     #  Hostname MUST match what R1 expects
+username Router1 password CiscoPass #  Password MUST match on both sides
+interface serial 0/0/0               #  Selects WAN interface
+encapsulation ppp                    #  Sets encapsulation type to PPP
+ppp authentication chap              #  Enables CHAP authentication`
+                    },
+                    {
+                        id: 'stp',
+                        title: 'STP (Spanning Tree)',
+                        rawCode: `@Configuration
+spanning-tree mode rapid-pvst        #  Sets mode to Rapid PVST+ (Faster convergence)
+spanning-tree vlan 10 root primary   #  Forces switch to be Root Bridge (Priority 24576)
+spanning-tree vlan 10 priority 4096 #  Manually sets priority (Multiple of 4096)
+
+@PortFast & BPDU Guard (Access Ports)
+interface fa 0/2                     #  Selects end-device port
+spanning-tree portfast               #  Skips Listening/Learning states (Immediate forwarding)
+spanning-tree bpduguard enable       #  Shuts down port if BPDU received (prevents loops)
+# Or global default:
+spanning-tree portfast bpduguard default #  Enables BPDU Guard on all PortFast ports`
+                    },
+                    {
+                        id: 'discovery',
+                        title: 'Discovery (CDP & LLDP)',
+                        rawCode: `@CDP (Cisco Proprietary)
+cdp run                              #  Enables CDP globally
+cdp timer 60                         #  Sets CDP update packet timer
+interface gig 0/0                    #  Selects interface
+cdp enable                           #  Enables CDP on specific interface
+show cdp neighbors detail            #  Shows detailed info about neighbors
+
+@LLDP (Open Standard)
+lldp run                             #  Enables LLDP globally
+lldp timer 30                        #  Sets LLDP update packet timer
+interface gig 0/0                    #  Selects interface
+lldp transmit                        #  Allows sending LLDP packets
+lldp receive                         #  Allows receiving LLDP packets
+show lldp neighbors detail           #  Shows detailed info about neighbors`
+                    }
+                ];
+
+                const sectionsDataFr = [
+                    {
+                        id: 'ssh',
+                        title: 'Management & Access (SSH)',
+                        rawCode: `hostname R1 # Définit le nom d'hôte de l'appareil
+ip domain-name ntic.ma # Définit le nom de domaine requis pour la génération de clé
+username admin secret password # Crée un utilisateur local avec cryptage MD5
+crypto key generate rsa # Génère les clés SSH
+1024 # Définit la taille du module de la clé RSA à 1024 bits
+ip ssh version 2 # Impose SSHv2 (Meilleure pratique de sécurité)
+line vty 0 4 # Configure les 5 premières lignes de terminal virtuel
+transport input ssh # Restreint l'accès distant à SSH uniquement (Désactive Telnet)
+login local # Authentifie par rapport à la base de données d'utilisateurs locale`
+                    },
+                    {
+                        id: 'routing',
+                        title: 'Routage (Static & IPv6)',
+                        rawCode: `@Standard
+ip route 192.168.10.0 255.255.255.0 serial 0/0/0 # Route via l'interface de sortie
+ip route 192.168.10.0 255.255.255.0 172.16.0.2 # Route via l'adresse IP du saut suivant
+
+@Résumé de Route
+# Résumé : [1.0, 2.0, 3.0] /24 -> 192.168.0.0/22
+ip route 192.168.0.0 255.255.252.0 serial 0/0/0 # Configuration de route résumée
+
+@Route Statique Flottante
+# Routes Statiques Flottantes : Chemins de secours utilisant la DA (Distance Administrative)
+ip route 192.168.10.0 255.255.255.0 gig 0/0 # Chemin principal (DA par défaut 1)
+ip route 192.168.10.0 255.255.255.0 fa 0/2 100 # Chemin de secours 1 (DA 100)
+ip route 192.168.10.0 255.255.255.0 serial 0/0/0 150 # Chemin de secours 2 (DA 150)
+
+@Routage IPv6
+ipv6 unicast-routing # Active le transfert de paquets IPv6
+ipv6 route 2001:DB8::/64 serial 0/0 # Route statique IPv6`
+                    },
+                    {
+                        id: 'switching',
+                        title: 'Switching & Inter-VLAN',
+                        rawCode: `@Configuration VLAN
+vlan 10 # Crée le VLAN 10
+name IT # Nomme le VLAN 'IT'
+vlan 20 # Crée le VLAN 20
+name HR # Nomme le VLAN 'HR'
+
+@Assignation de Port
+interface fa 0/1 # Sélectionne l'interface Fa0/1
+switchport mode access # Configure le port en accès
+switchport access vlan 10 # Assigne le port au VLAN 10
+interface fa 0/2 # Sélectionne l'interface Fa0/2
+switchport mode access # Configure le port en accès
+switchport access vlan 20 # Assigne le port au VLAN 20
+
+@MLS (Switch Multicouche / SVI)
+interface vlan 10 # Crée l'interface virtuelle SVI pour le VLAN 10
+ip address 192.168.10.1 255.255.255.0 # Assigne l'IP passerelle
+interface vlan 20 # Crée l'interface virtuelle SVI pour le VLAN 20
+ip address 192.168.20.1 255.255.255.0 # Assigne l'IP passerelle
+
+@Router on a Stick
+interface fa 0/0.10 # Crée une sous-interface pour le VLAN 10
+encapsulation dot1q 10 # Active le taggage 802.1Q pour le VLAN 10
+ip address 192.168.10.1 255.255.255.0 # Assigne l'IP passerelle
+interface fa 0/0.20 # Crée une sous-interface pour le VLAN 20
+encapsulation dot1q 20 # Active le taggage 802.1Q pour le VLAN 20
+ip address 192.168.20.1 255.255.255.0 # Assigne l'IP passerelle`
+                    },
+                    {
+                        id: 'port-security',
+                        title: 'Sécurité des Ports',
+                        rawCode: `@Configuration
+interface fa 0/1 # Sélectionne un port d'accès
+switchport mode access # Force le mode accès (requis)
+switchport port-security # Active la fonction de sécurité
+switchport port-security maximum 2 # Max 2 adresses MAC
+switchport port-security mac-address sticky # Apprend et sauvegarde les MACs
+
+@Modes de Violation
+switchport port-security violation restrict # Drop le paquet, incrémente le compteur, envoie un log
+switchport port-security violation shutdown # (Défaut) Met le port en err-disabled
+switchport port-security violation protect # Drop le paquet, sans log ni compteur
+
+@Vérification
+show port-security interface fa 0/1 # Affiche le statut de sécurité
+show port-security address # Affiche la table des MACs sécurisées`
+                    },
+                    {
+                        id: 'hsrp',
+                        title: 'First Hop Redundancy (HSRP)',
+                        rawCode: `@Cas : Plusieurs VLANs (Équilibrage de charge)
+# Configuration R1
+interface g0/0.10 # Sous-interface VLAN 10
+ip address 192.168.10.1 255.255.255.0 # IP Physique
+standby 10 ip 192.168.10.254 # IP Passerelle Virtuelle
+standby 10 priority 110 # Priorité haute -> R1 Actif
+standby 10 preempt # Permet de reprendre le rôle Actif
+interface gig 0/0.20 # Sous-interface VLAN 20
+ip address 192.168.20.1 255.255.255.0 # IP Physique
+standby 20 ip 192.168.20.254 # IP Passerelle Virtuelle
+standby 20 priority 100 # Priorité basse -> R1 Standby
+standby 20 preempt # Active la préemption
+
+# Configuration R2
+interface gig 0/0.10 # Sous-interface VLAN 10
+ip address 192.168.10.2 255.255.255.0 # IP Physique
+standby 10 ip 192.168.10.254 # Même IP Virtuelle
+standby 10 priority 100 # Priorité basse -> R2 Standby
+standby 10 preempt # Active la préemption
+interface gig 0/0.20 # Sous-interface VLAN 20
+ip address 192.168.20.2 255.255.255.0 # IP Physique
+standby 20 ip 192.168.20.254 # Même IP Virtuelle
+standby 20 priority 110 # Priorité haute -> R2 Actif
+standby 20 preempt # Permet de reprendre le rôle Actif`
+                    },
+                    {
+                        id: 'etherchannel',
+                        title: 'EtherChannel',
+                        rawCode: `@LACP (Standard Ouvert)
+interface range fa 0/1-4 # Sélectionne la plage d'interfaces
+channel-group 1 mode active # Ajoute au groupe 1 en mode LACP Active
+interface port-channel 1 # Entre dans l'interface logique
+switchport mode trunk # Configure le trunk
+
+@PAgP (Propriétaire Cisco)
+interface range fa 0/1-4 # Sélectionne la plage d'interfaces
+channel-group 1 mode desirable # Ajoute au groupe 1 en mode PAgP Desirable
+interface port-channel 1 # Entre dans l'interface logique
+switchport mode trunk # Configure le trunk`
+                    },
+                    {
+                        id: 'acl',
+                        title: 'ACL (Access Control Lists)',
+                        rawCode: `@ACL Standard
+# Placer près de la DESTINATION
+access-list 1 permit 192.168.10.0 0.0.0.255 # Autorise le réseau source
+access-list 1 deny any # Refuse tout le reste (explicite)
+
+# Standard Nommée
+ip access-list standard MyACL # Crée l'ACL standard 'MyACL'
+permit 192.168.10.0 0.0.0.255 # Autorise le réseau source
+deny any # Refuse tout le reste
+
+@ACL Étendue
+# Placer près de la SOURCE
+access-list 100 permit tcp 192.168.10.0 0.0.0.255 any eq 80 # Autorise HTTP (80)
+access-list 100 permit ip any any # Autorise tout le reste
+
+# Étendue Nommée
+ip access-list extended MyExtACL # Crée l'ACL étendue 'MyExtACL'
+permit tcp 192.168.10.0 0.0.0.255 any eq 80 # Autorise HTTP
+permit ip any any # Autorise tout le reste
+
+@Application des ACLs
+interface gig 0/0 # Sélectionne l'interface
+ip access-group 1 in # Applique l'ACL 1 au trafic entrant`
+                    },
+                    {
+                        id: 'nat',
+                        title: 'NAT (Network Address Translation)',
+                        rawCode: `@Configuration Interface
+interface gig 0/1 # Interface LAN
+ip nat inside # Marque comme Inside (Privé)
+interface gig 0/0 # Interface WAN
+ip nat outside # Marque comme Outside (Public)
+
+@NAT Statique
+# Mappage Un-pour-Un
+ip nat inside source static 192.168.1.10 203.0.113.5 # Mappe IP privée vers IP publique
+
+@NAT Dynamique
+# Mappage Plusieurs-pour-Plusieurs (nécessite un pool)
+access-list 1 permit 192.168.1.0 0.0.0.255 # Définit le trafic autorisé
+ip nat pool MyPool 203.0.113.10 203.0.113.20 netmask 255.255.255.0 # Définit le pool public
+ip nat inside source list 1 pool MyPool # Lie la liste au pool
+
+@PAT (NAT Overload)
+# Mappage Plusieurs-pour-Un (IP de l'interface)
+access-list 1 permit 192.168.1.0 0.0.0.255 # Définit le trafic autorisé
+ip nat inside source list 1 interface gig 0/0 overload # Mappe la liste vers l'IP WAN`
+                    },
+                    {
+                        id: 'ospf',
+                        title: 'OSPF',
+                        rawCode: `@OSPFv2 (IPv4)
+router ospf 10 # Démarre le processus OSPF 10
+router-id 1.1.1.1 # Définit l'ID Routeur manuellement
+network 192.168.10.0 0.0.0.255 area 0 # Annonce le réseau dans l'Aire 0
+passive-interface gig 0/0 # Empêche l'envoi de paquets Hello sur le LAN
+default-information originate # Annonce la route par défaut
+
+@OSPFv3 (IPv6)
+ipv6 unicast-routing # Active le routage IPv6
+ipv6 router ospf 10 # Démarre le processus OSPFv3
+router-id 1.1.1.1 # ID Routeur (Requis pour v3)
+interface gig 0/0 # Configuration interface
+ipv6 ospf 10 area 0 # Active OSPFv3 sur l'interface
+
+@Timers & Coûts
+ip ospf hello-interval 10 # Timer Hello 10s
+ip ospf dead-interval 40 # Timer Dead 40s
+auto-cost reference-bandwidth 100 # Bande passante de référence (100 Mbps)
+# Ou par interface :
+interface gig 0/0 # Sélectionne l'interface
+ip ospf cost 50 # Force le coût du lien
+ip ospf priority 200 # Priorité d'élection DR`
+                    },
+                    {
+                        id: 'dhcp',
+                        title: 'DHCP',
+                        rawCode: `@Serveur DHCPv4 (Routeur 1)
+ip dhcp excluded-address 192.168.1.1 192.168.1.10 # Exclut les IP .1 à .10
+ip dhcp pool LAN_POOL # Crée le pool DHCP
+network 192.168.1.0 255.255.255.0 # Réseau à distribuer
+default-router 192.168.1.1 # Passerelle par défaut
+dns-server 8.8.8.8 # Serveur DNS
+domain-name example.com # Nom de domaine
+lease 1 12 0 # Durée du bail (1 jour, 12 heures)
+
+@Relais DHCP (Routeur 2)
+interface gig 0/0 # Interface LAN
+ip helper-address 10.0.0.1 # Transfère les requêtes vers le serveur
+
+@DHCPv6 / SLAAC
+# Cas 1: SLAAC (Stateless Auto-Config) - Pas de serveur DHCP
+ipv6 unicast-routing # Active le routage IPv6
+interface gig 0/0 # Sélectionne l'interface
+ipv6 address 2001:db8:acad:1::1/64 # Configure l'IP (Router Advertisement)
+
+# Cas 2: DHCP Stateless (SLAAC pour IP, DHCP pour DNS)
+ipv6 dhcp pool STATELESS_POOL # Crée le pool
+dns-server 2001:4860:4860::8888 # Fournit uniquement le DNS
+interface gig 0/0 # Sélectionne l'interface
+ipv6 dhcp server STATELESS_POOL # Lie le pool à l'interface
+ipv6 nd other-config-flag # Flag 'O' (Vérifier DHCP pour DNS)
+
+# Cas 3: DHCP Stateful (DHCP pour tout)
+ipv6 dhcp pool STATEFUL_POOL # Crée le pool
+address prefix 2001:db8:acad:1::/64 # Distribue les IPs
+interface gig 0/0 # Sélectionne l'interface
+ipv6 dhcp server STATEFUL_POOL # Lie le pool à l'interface
+ipv6 nd managed-config-flag # Flag 'M' (Utiliser DHCP pour IP)`
+                    },
+                    {
+                        id: 'ntp',
+                        title: 'NTP (Time)',
+                        rawCode: `@Serveur (Authoritative)
+ntp master 3 # Configure comme serveur NTP (Strate 3)
+
+@Client
+ntp server 192.168.1.10 # Configure pour se synchroniser avec le serveur
+
+@Vérification
+show ntp status # Statut de synchronisation
+show ntp associations # Serveurs connectés
+show clock # Heure système actuelle`
+                    },
+                    {
+                        id: 'ppp',
+                        title: 'PPP (PAP & CHAP)',
+                        rawCode: `@PAP (Mot de passe en clair)
+# R1
+username R2 password Cisco # Crée l'utilisateur correspondant à l'hôte distant
+interface serial 0/0/0 # Interface WAN
+encapsulation ppp # Encapsulation PPP
+ppp authentication pap # Active PAP
+ppp pap sent-username R1 password cisco # Envoie les identifiants
+# R2
+username R1 password Cisco # Crée l'utilisateur correspondant à l'hôte distant
+interface serial 0/0/0 # Interface WAN
+encapsulation ppp # Encapsulation PPP
+ppp authentication pap # Active PAP
+ppp pap sent-username R2 password Cisco # Envoie les identifiants
+
+@CHAP (Chiffré - Handshake 3 voies)
+# R1
+hostname Router1 # Le nom d'hôte DOIT correspondre à l'attente de R2
+username Router2 password CiscoPass # Le mot de passe DOIT correspondre
+interface serial 0/0/0 # Interface WAN
+encapsulation ppp # Encapsulation PPP
+ppp authentication chap # Active CHAP
+# R2
+hostname Router2 # Le nom d'hôte DOIT correspondre à l'attente de R1
+username Router1 password CiscoPass # Le mot de passe DOIT correspondre
+interface serial 0/0/0 # Interface WAN
+encapsulation ppp # Encapsulation PPP
+ppp authentication chap # Active CHAP`
+                    },
+                    {
+                        id: 'stp',
+                        title: 'STP (Spanning Tree)',
+                        rawCode: `@Configuration
+spanning-tree mode rapid-pvst # Mode Rapid PVST+
+spanning-tree vlan 10 root primary # Force le switch en Racine (Priorité 24576)
+spanning-tree vlan 10 priority 4096 # Priorité manuelle (Multiple de 4096)
+
+@PortFast & BPDU Guard (Ports d'accès)
+interface fa 0/2 # Port terminal
+spanning-tree portfast # Saute l'écoute/apprentissage
+spanning-tree bpduguard enable # Coupe le port si BPDU reçu
+# Ou par défaut global :
+spanning-tree portfast bpduguard default # Active BPDU Guard sur tous les ports PortFast`
+                    },
+                    {
+                        id: 'discovery',
+                        title: 'Discovery (CDP & LLDP)',
+                        rawCode: `@CDP (Propriétaire Cisco)
+cdp run # Active CDP globalement
+cdp timer 60 # Timer d'envoi CDP
+interface gig 0/0 # Sélectionne l'interface
+cdp enable # Active CDP sur l'interface
+show cdp neighbors detail # Infos détaillées
+
+@LLDP (Standard Ouvert)
+lldp run # Active LLDP globalement
+lldp timer 30 # Timer d'envoi LLDP
+interface gig 0/0 # Sélectionne l'interface
+lldp transmit # Envoi paquets LLDP
+lldp receive # Réception paquets LLDP
+show lldp neighbors detail # Infos détaillées`
+                    }
+                ];
+
+                const currentSectionsData = computed(() => {
+                    return language.value === 'fr' ? sectionsDataFr : sectionsDataEn;
+                });
+
+                const filteredSections = computed(() => {
+                    const data = currentSectionsData.value;
+                    if (!searchQuery.value) return data;
+                    const query = searchQuery.value.toLowerCase();
+                    return data.filter(section => {
+                        return section.title.toLowerCase().includes(query) || 
+                                section.rawCode.toLowerCase().includes(query);
+                    });
+                });
+
+                const pinnedSections = computed(() => {
+                    return currentSectionsData.value.filter(s => pinnedIds.value.includes(s.id));
+                });
+
+                const togglePin = (id) => {
+                    if (pinnedIds.value.includes(id)) {
+                        pinnedIds.value = pinnedIds.value.filter(pid => pid !== id);
+                    } else {
+                        pinnedIds.value.push(id);
+                    }
+                };
+
+                const parseCode = (raw) => raw.split('\n');
+
+                const highlightLine = (line) => {
+                    if (!line) return '<span class="text-transparent">.</span>'; 
+                    const trimmed = line.trim();
+
+                    // Headers
+                    if (trimmed.startsWith('@')) {
+                        const content = trimmed.substring(1);
+                        return `<span class="syntax-header"><i class="ph-bold ph-hash text-indigo-400"></i> ${content}</span>`;
+                    }
+
+                    // Pure Comments
+                    if (trimmed.startsWith('#')) { 
+                         const blurClass = viewMode.value === 'explain' ? 'blur-content' : '';
+                         return `<span class="italic text-slate-500 ${blurClass}">${line}</span>`;
+                    }
+
+                    // Code + Comments
+                    let html = line;
+                    let commentPart = "";
+                    let codePart = "";
+
+                    if (line.includes('#')) {
+                        const parts = line.split('#');
+                        codePart = parts[0];
+                        const commentText = parts.slice(1).join('#');
+                        const blurClass = viewMode.value === 'explain' ? 'blur-content' : '';
+                        commentPart = `<span class="italic pl-4 text-slate-500 ${blurClass}"># ${commentText}</span>`;
+                    } else {
+                        codePart = line;
+                    }
+
+                    // Syntax Highlighting & Challenge Mode Logic
+                    codePart = codePart.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Escape
+
+                    // Temporary placeholder store to prevent regex collisions
+                    const replacements = [];
+                    const pushReplacement = (html) => {
+                        replacements.push(html);
+                        return `__R${replacements.length - 1}__`;
+                    };
+
+                    // Keywords (Purple)
+                    const keywords = [
+                        "router", "interface", "vlan", "username", "line", "transport", "login", 
+                        "crypto", "ip nat", "ip dhcp", "ipv6", "hostname", "ip domain-name", 
+                        "ip address", "default-router", "dns-server", "domain-name", "service", 
+                        "banner", "enable", "exit", "end", "configure terminal"
+                    ];
+                    keywords.forEach(kw => {
+                        const regex = new RegExp(`\\b${kw}\\b`, 'g');
+                        codePart = codePart.replace(regex, (match) => {
+                            if (viewMode.value === 'challenge') {
+                                return pushReplacement(`<input type="text" class="challenge-input" data-answer="${match}" style="width: ${match.length}ch" spellcheck="false" autocomplete="off">`);
+                            } else {
+                                const blurClass = viewMode.value === 'data' ? 'blur-content' : '';
+                                return pushReplacement(`<span class="syntax-keyword ${blurClass}">${match}</span>`);
+                            }
+                        });
+                    });
+
+                    // Methods (Blue)
+                    const methods = [
+                        "ip route", "switchport", "access-list", "standby", "channel-group", "encapsulation", 
+                        "ppp", "spanning-tree", "cdp", "lldp", "network", "neighbor", "lease", "confreg", 
+                        "copy", "logging", "reset", "mode", "password", "secret", "trunk", "access", "sticky", 
+                        "mac-address", "violation", "auto-cost", "priority", "area", "dead-interval", "hello-interval"
+                    ];
+                    methods.forEach(m => {
+                        const regex = new RegExp(`\\b${m}\\b`, 'g');
+                        codePart = codePart.replace(regex, (match) => {
+                            if (viewMode.value === 'challenge') {
+                                return pushReplacement(`<input type="text" class="challenge-input" data-answer="${match}" style="width: ${match.length}ch" spellcheck="false" autocomplete="off">`);
+                            } else {
+                                const blurClass = viewMode.value === 'data' ? 'blur-content' : '';
+                                return pushReplacement(`<span class="syntax-method ${blurClass}">${match}</span>`);
+                            }
+                        });
+                    });
+
+                    // Restore replacements
+                    replacements.forEach((html, i) => {
+                         codePart = codePart.replace(`__R${i}__`, html);
+                    });
+
+                    // IPs & Numbers (Green) - only highlight if not in challenge mode for clarity, or keep? Keeping for now.
+                    if (viewMode.value !== 'challenge') {
+                        codePart = codePart.replace(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(\/\d+)?/g, '<span class="syntax-value">$1$2</span>');
+                        codePart = codePart.replace(/\b(\d+)\b/g, '<span class="syntax-value">$1</span>');
+                    }
+
+                    // Wrap code part in blur if 'recall' mode
+                    const codeBlurClass = viewMode.value === 'recall' ? 'blur-content' : '';
+
+                    return `<span class="text-slate-200 font-medium ${codeBlurClass}">${codePart}</span>${commentPart}`;
+                };
+
+                // Logic for handling input in Challenge Mode
+                const handleChallengeInput = (e) => {
+                    if (e.target && e.target.classList.contains('challenge-input')) {
+                        const input = e.target;
+                        const answer = input.dataset.answer;
+                        const value = input.value;
+
+                        // Case-insensitive check
+                        if (value.toLowerCase() === answer.toLowerCase()) {
+                            input.classList.add('correct');
+                            input.classList.remove('incorrect');
+                            input.setAttribute('readonly', true);
+                            input.blur(); // Remove focus to show result clearly
+                        } else if (value.length >= answer.length) {
+                             input.classList.add('incorrect');
+                             input.classList.remove('correct');
+                        } else {
+                            input.classList.remove('incorrect');
+                            input.classList.remove('correct');
+                        }
+                    }
+                };
+
+                const scrollToSection = (id) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                        activeSection.value = id;
+                    }
+                };
+
+                const handleScroll = (e) => {
+                    const scrollPosition = e.target.scrollTop + 300;
+                    for (const section of currentSectionsData.value) {
+                        const el = document.getElementById(section.id);
+                        if (el && el.offsetTop <= scrollPosition) {
+                            activeSection.value = section.id;
+                        }
+                    }
+                };
+
+                const copySection = (text) => {
+                    const sectionId = filteredSections.value.find(s => s.rawCode === text)?.id;
+                    const cleanText = text
+                        .split('\n')
+                        .filter(line => !line.trim().startsWith('@') && !line.trim().startsWith('#'))
+                        .map(line => line.split('#')[0].trim())
+                        .filter(line => line.length > 0)
+                        .join('\n');
+
+                    navigator.clipboard.writeText(cleanText).then(() => {
+                        copiedState.value[sectionId] = true;
+                        showToast();
+                        setTimeout(() => copiedState.value[sectionId] = false, 2000);
+                    });
+                };
+                
+                let toastTimeout;
+                const showToast = () => {
+                    toast.value.show = true;
+                    if(toastTimeout) clearTimeout(toastTimeout);
+                    toastTimeout = setTimeout(() => toast.value.show = false, 1500);
+                }
+
+                return {
+                    searchInput,
+                    searchQuery,
+                    filteredSections,
+                    pinnedSections,
+                    activeSection,
+                    parseCode,
+                    highlightLine,
+                    scrollToSection,
+                    handleScroll,
+                    copySection,
+                    copiedState,
+                    mobileMenuOpen,
+                    viewMode,
+                    pinnedIds,
+                    togglePin,
+                    toast,
+                    language,
+                    t,
+                    toggleLanguage,
+                    handleChallengeInput
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
