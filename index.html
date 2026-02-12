@@ -27,7 +27,7 @@
         ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
 
-        /* Advanced Blur Effects */
+        /* Advanced Blur Effects - Optimized */
         .blur-content {
             filter: blur(8px);
             opacity: 0.4;
@@ -35,6 +35,10 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             background: rgba(0,0,0,0.2);
             border-radius: 4px;
+            /* Performance optimizations */
+            will-change: filter, opacity;
+            transform: translateZ(0); 
+            -webkit-transform: translateZ(0);
         }
         .blur-content:hover {
             filter: blur(0);
@@ -283,8 +287,9 @@
                 </div>
 
                 <!-- Sections -->
+                <!-- Use processedSections for optimized rendering -->
                 <div 
-                    v-for="(section, index) in filteredSections" 
+                    v-for="(section, index) in processedSections" 
                     :key="section.id" 
                     :id="section.id"
                     class="scroll-mt-32 md:scroll-mt-8 animate-slide-up"
@@ -322,7 +327,8 @@
 
                         <div class="p-5 overflow-x-auto bg-black/20">
                             <div class="code-font text-xs md:text-sm leading-7 min-w-[600px] md:min-w-0">
-                                <template v-for="(line, idx) in parseCode(section.rawCode)" :key="idx">
+                                <!-- Optimization: Iterate over pre-rendered lines -->
+                                <template v-for="(htmlLine, idx) in section.renderedLines" :key="idx">
                                     <div class="group/line table-row hover:bg-white/5 transition-colors w-full duration-75">
                                         <!-- Line Number -->
                                         <div class="table-cell select-none text-slate-700 text-right pr-4 w-10 border-r border-white/5 group-hover/line:text-slate-500 transition-colors text-[10px] py-0.5 align-middle">
@@ -330,7 +336,7 @@
                                         </div>
                                         
                                         <!-- Code Content -->
-                                        <div class="table-cell pl-4 w-full whitespace-pre align-middle py-0.5" v-html="highlightLine(line)"></div>
+                                        <div class="table-cell pl-4 w-full whitespace-pre align-middle py-0.5" v-html="htmlLine"></div>
                                     </div>
                                 </template>
                             </div>
@@ -1227,6 +1233,37 @@ show lldp neighbors detail # Infos détaillées`
                     return `<span class="text-slate-200 font-medium ${codeBlurClass}">${codePart}</span>${commentPart}`;
                 };
 
+                // Optimization: Pre-calculate highlighted code to avoid re-running regex on every render/scroll
+                const processedSections = computed(() => {
+                    // Dependency tracking: logic runs when filteredSections or viewMode changes
+                    const mode = viewMode.value; // Capture dependency
+                    return filteredSections.value.map(section => {
+                        return {
+                            ...section,
+                            // Pre-process lines
+                            renderedLines: section.rawCode.split('\n').map(line => highlightLine(line))
+                        };
+                    });
+                });
+
+                // Optimization: Throttle scroll event using requestAnimationFrame
+                let ticking = false;
+                const handleScroll = (e) => {
+                    if (!ticking) {
+                        window.requestAnimationFrame(() => {
+                            const scrollPosition = e.target.scrollTop + 300;
+                            for (const section of currentSectionsData.value) {
+                                const el = document.getElementById(section.id);
+                                if (el && el.offsetTop <= scrollPosition) {
+                                    activeSection.value = section.id;
+                                }
+                            }
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                };
+
                 // Logic for handling input in Challenge Mode
                 const handleChallengeInput = (e) => {
                     if (e.target && e.target.classList.contains('challenge-input')) {
@@ -1255,16 +1292,6 @@ show lldp neighbors detail # Infos détaillées`
                     if (el) {
                         el.scrollIntoView({ behavior: 'smooth' });
                         activeSection.value = id;
-                    }
-                };
-
-                const handleScroll = (e) => {
-                    const scrollPosition = e.target.scrollTop + 300;
-                    for (const section of currentSectionsData.value) {
-                        const el = document.getElementById(section.id);
-                        if (el && el.offsetTop <= scrollPosition) {
-                            activeSection.value = section.id;
-                        }
                     }
                 };
 
@@ -1312,7 +1339,8 @@ show lldp neighbors detail # Infos détaillées`
                     t,
                     toggleLanguage,
                     handleChallengeInput,
-                    desktopSidebarOpen
+                    desktopSidebarOpen,
+                    processedSections
                 };
             }
         }).mount('#app');
