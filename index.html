@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,19 +116,31 @@
         <div v-if="mobileMenuOpen" class="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden" @click="mobileMenuOpen = false"></div>
 
         <!-- Sidebar Navigation -->
-        <aside :class="['fixed md:static inset-y-0 left-0 z-50 w-80 glass-panel border-r-0 border-r border-white/5 flex flex-col flex-shrink-0 transition-transform duration-300 shadow-2xl z-50', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0']">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
+        <aside 
+            :class="['fixed md:static inset-y-0 left-0 z-50 glass-panel border-r-0 border-r border-white/5 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out shadow-2xl', 
+                mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                desktopSidebarOpen ? 'md:w-80' : 'md:w-0 md:border-r-0 md:overflow-hidden'
+            ]"
+        >
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent whitespace-nowrap">
                 <div>
                     <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                         <i class="ph-duotone ph-cpu text-indigo-400 text-3xl"></i>
                         CCNA<span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">ARCHITECT</span>
                     </h1>
                 </div>
-                <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+                <div class="flex items-center gap-2">
+                    <button @click="desktopSidebarOpen = false" class="hidden md:block text-slate-400 hover:text-white transition-colors" title="Collapse Sidebar">
+                        <i class="ph-bold ph-caret-double-left text-lg"></i>
+                    </button>
+                    <button @click="mobileMenuOpen = false" class="md:hidden text-slate-400 hover:text-white">
+                        <i class="ph ph-x text-xl"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Search -->
-            <div class="p-4 border-b border-white/5">
+            <div class="p-4 border-b border-white/5 whitespace-nowrap">
                 <div class="relative group">
                     <input 
                         ref="searchInput"
@@ -146,7 +157,7 @@
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 overflow-y-auto p-3 space-y-6">
+            <nav class="flex-1 overflow-y-auto p-3 space-y-6 whitespace-nowrap">
                 
                 <!-- Favorites Section -->
                 <div v-if="pinnedSections.length > 0" class="animate-slide-up">
@@ -191,6 +202,16 @@
         <!-- Added @input event listener for delegation to handle challenge inputs -->
         <main class="flex-1 overflow-y-auto relative scroll-smooth" id="main-content" @scroll="handleScroll" @input="handleChallengeInput">
             
+            <!-- Floating Sidebar Toggle (Desktop) -->
+            <button 
+                v-if="!desktopSidebarOpen" 
+                @click="desktopSidebarOpen = true" 
+                class="hidden md:flex fixed top-8 left-4 z-40 p-2.5 glass-panel rounded-xl text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all shadow-xl animate-slide-up"
+                title="Expand Sidebar"
+            >
+                <i class="ph-bold ph-caret-double-right text-lg"></i>
+            </button>
+
             <!-- Mobile Header -->
             <div class="md:hidden p-4 glass-panel border-b border-white/5 flex justify-between items-center sticky top-0 z-30">
                 <button @click="mobileMenuOpen = true" class="text-slate-300"><i class="ph ph-list text-2xl"></i></button>
@@ -201,7 +222,7 @@
             <div class="max-w-6xl mx-auto p-4 md:p-8 space-y-8 pb-32">
                 
                 <!-- Dashboard / Tools -->
-                <div class="glass-panel p-1 rounded-2xl sticky md:static top-2 z-20 shadow-2xl mx-auto max-w-4xl ring-1 ring-white/10">
+                <div class="glass-panel p-1 rounded-2xl sticky top-20 md:top-6 z-30 shadow-2xl mx-auto max-w-4xl ring-1 ring-white/10 transition-all duration-300">
                     <div class="bg-black/40 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
                         
                         <!-- Mode Selector -->
@@ -351,13 +372,19 @@
                 
                 // Persistence State
                 const viewMode = ref(localStorage.getItem('ccna_view_mode') || 'standard');
-                const pinnedIds = ref(JSON.parse(localStorage.getItem('ccna_pinned_ids') || '[]'));
+                const desktopSidebarOpen = ref(localStorage.getItem('ccna_sidebar') !== 'false'); // Default to true if not set
+                let initialPinned = [];
+                try {
+                    initialPinned = JSON.parse(localStorage.getItem('ccna_pinned_ids') || '[]');
+                } catch(e) { initialPinned = []; }
+                const pinnedIds = ref(initialPinned);
                 const language = ref(localStorage.getItem('ccna_language') || 'en');
 
                 // Watchers for persistence
                 watch(viewMode, (newVal) => localStorage.setItem('ccna_view_mode', newVal));
                 watch(pinnedIds, (newVal) => localStorage.setItem('ccna_pinned_ids', JSON.stringify(newVal)), { deep: true });
                 watch(language, (newVal) => localStorage.setItem('ccna_language', newVal));
+                watch(desktopSidebarOpen, (newVal) => localStorage.setItem('ccna_sidebar', newVal));
 
                 // UI Translations
                 const translations = {
@@ -410,7 +437,12 @@
                     document.addEventListener('keydown', (e) => {
                         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                             e.preventDefault();
-                            searchInput.value.focus();
+                            if(desktopSidebarOpen.value) {
+                                searchInput.value.focus();
+                            } else {
+                                desktopSidebarOpen.value = true;
+                                setTimeout(() => searchInput.value.focus(), 300);
+                            }
                         }
                     });
                 });
@@ -1067,7 +1099,7 @@ show lldp neighbors detail # Infos détaillées`
                     const query = searchQuery.value.toLowerCase();
                     return data.filter(section => {
                         return section.title.toLowerCase().includes(query) || 
-                                section.rawCode.toLowerCase().includes(query);
+                                 section.rawCode.toLowerCase().includes(query);
                     });
                 });
 
@@ -1096,9 +1128,9 @@ show lldp neighbors detail # Infos détaillées`
                     }
 
                     // Pure Comments
-                    if (trimmed.startsWith('#')) { 
-                         const blurClass = viewMode.value === 'explain' ? 'blur-content' : '';
-                         return `<span class="italic text-slate-500 ${blurClass}">${line}</span>`;
+                    if (trimmed.startsWith('#')) {  
+                        const blurClass = viewMode.value === 'explain' ? 'blur-content' : ''; 
+                        return `<span class="italic text-slate-500 ${blurClass}">${line}</span>`;
                     }
 
                     // Code + Comments
@@ -1123,53 +1155,67 @@ show lldp neighbors detail # Infos détaillées`
                     const replacements = [];
                     const pushReplacement = (html) => {
                         replacements.push(html);
-                        return `__R${replacements.length - 1}__`;
+                        // Using a distinct delimiter sequence for placeholders
+                        return `___R${replacements.length - 1}___`;
                     };
 
-                    // Keywords (Purple)
+                    // Expanded Vocabulary for "Command Architect" level precision
                     const keywords = [
                         "router", "interface", "vlan", "username", "line", "transport", "login", 
                         "crypto", "ip nat", "ip dhcp", "ipv6", "hostname", "ip domain-name", 
                         "ip address", "default-router", "dns-server", "domain-name", "service", 
-                        "banner", "enable", "exit", "end", "configure terminal"
+                        "banner", "enable", "exit", "end", "configure terminal", "ip ssh", 
+                        "no shutdown", "ip access-group", "ip access-list", "ip helper-address", 
+                        "ipv6 address", "ipv6 unicast-routing", "ipv6 route", "ipv6 router ospf", 
+                        "ipv6 dhcp pool", "ipv6 dhcp server", "ipv6 nd", "ntp master", "ntp server", 
+                        "spanning-tree", "cdp run", "lldp run", "clock set", "license boot"
                     ];
-                    keywords.forEach(kw => {
-                        const regex = new RegExp(`\\b${kw}\\b`, 'g');
-                        codePart = codePart.replace(regex, (match) => {
-                            if (viewMode.value === 'challenge') {
-                                return pushReplacement(`<input type="text" class="challenge-input" data-answer="${match}" style="width: ${match.length}ch" spellcheck="false" autocomplete="off">`);
-                            } else {
-                                const blurClass = viewMode.value === 'data' ? 'blur-content' : '';
-                                return pushReplacement(`<span class="syntax-keyword ${blurClass}">${match}</span>`);
-                            }
-                        });
-                    });
 
-                    // Methods (Blue)
                     const methods = [
                         "ip route", "switchport", "access-list", "standby", "channel-group", "encapsulation", 
                         "ppp", "spanning-tree", "cdp", "lldp", "network", "neighbor", "lease", "confreg", 
                         "copy", "logging", "reset", "mode", "password", "secret", "trunk", "access", "sticky", 
-                        "mac-address", "violation", "auto-cost", "priority", "area", "dead-interval", "hello-interval"
+                        "mac-address", "violation", "auto-cost", "priority", "area", "dead-interval", "hello-interval",
+                        "version", "rsa", "generate", "key", "vty", "serial", "gig", "fa", "ethernet", 
+                        "dot1q", "preempt", "active", "desirable", "permit", "deny", "standard", "extended", 
+                        "eq", "inside", "outside", "source", "static", "pool", "netmask", "overload", "ospf", 
+                        "pap", "chap", "root", "primary", "v2", "any", "host", "run", "timer", "transmit", 
+                        "receive", "detail", "router-id", "passive-interface", "default-information", 
+                        "originate", "excluded-address", "helper-address", "other-config-flag", 
+                        "managed-config-flag", "authentication", "sent-username", "rapid-pvst", 
+                        "portfast", "bpduguard"
                     ];
-                    methods.forEach(m => {
-                        const regex = new RegExp(`\\b${m}\\b`, 'g');
+
+                    // Combine and Sort by Length Descending to handle substrings correctly
+                    // e.g. "ip access-group" (length 15) must be processed before "access-group" (length 12) or "ip" (length 2)
+                    const allTokens = [
+                        ...keywords.map(k => ({ text: k, type: 'keyword' })),
+                        ...methods.map(m => ({ text: m, type: 'method' }))
+                    ].sort((a, b) => b.text.length - a.text.length);
+
+                    allTokens.forEach(token => {
+                        // Use regex boundary to match whole words/commands
+                        const regex = new RegExp(`\\b${token.text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'g');
                         codePart = codePart.replace(regex, (match) => {
                             if (viewMode.value === 'challenge') {
+                                // Challenge Mode: Convert to Input
                                 return pushReplacement(`<input type="text" class="challenge-input" data-answer="${match}" style="width: ${match.length}ch" spellcheck="false" autocomplete="off">`);
                             } else {
+                                // Standard Mode: Colorize
+                                const colorClass = token.type === 'keyword' ? 'syntax-keyword' : 'syntax-method';
                                 const blurClass = viewMode.value === 'data' ? 'blur-content' : '';
-                                return pushReplacement(`<span class="syntax-method ${blurClass}">${match}</span>`);
+                                return pushReplacement(`<span class="${colorClass} ${blurClass}">${match}</span>`);
                             }
                         });
                     });
 
-                    // Restore replacements
-                    replacements.forEach((html, i) => {
-                         codePart = codePart.replace(`__R${i}__`, html);
-                    });
+                    // Restore replacements - Reverse order to prevent substring replacement collision
+                    for (let i = replacements.length - 1; i >= 0; i--) {
+                        codePart = codePart.split(`___R${i}___`).join(replacements[i]);
+                    }
 
-                    // IPs & Numbers (Green) - only highlight if not in challenge mode for clarity, or keep? Keeping for now.
+                    // IPs & Numbers (Green) - only highlight if not in challenge mode
+                    // In challenge mode, these remain plain text (visible variables)
                     if (viewMode.value !== 'challenge') {
                         codePart = codePart.replace(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(\/\d+)?/g, '<span class="syntax-value">$1$2</span>');
                         codePart = codePart.replace(/\b(\d+)\b/g, '<span class="syntax-value">$1</span>');
@@ -1177,7 +1223,7 @@ show lldp neighbors detail # Infos détaillées`
 
                     // Wrap code part in blur if 'recall' mode
                     const codeBlurClass = viewMode.value === 'recall' ? 'blur-content' : '';
-
+                    
                     return `<span class="text-slate-200 font-medium ${codeBlurClass}">${codePart}</span>${commentPart}`;
                 };
 
@@ -1194,8 +1240,8 @@ show lldp neighbors detail # Infos détaillées`
                             input.classList.remove('incorrect');
                             input.setAttribute('readonly', true);
                             input.blur(); // Remove focus to show result clearly
-                        } else if (value.length >= answer.length) {
-                             input.classList.add('incorrect');
+                        } else if (value.length >= answer.length) { 
+                             input.classList.add('incorrect'); 
                              input.classList.remove('correct');
                         } else {
                             input.classList.remove('incorrect');
@@ -1236,8 +1282,8 @@ show lldp neighbors detail # Infos détaillées`
                         showToast();
                         setTimeout(() => copiedState.value[sectionId] = false, 2000);
                     });
-                };
-                
+                };                
+
                 let toastTimeout;
                 const showToast = () => {
                     toast.value.show = true;
@@ -1265,7 +1311,8 @@ show lldp neighbors detail # Infos détaillées`
                     language,
                     t,
                     toggleLanguage,
-                    handleChallengeInput
+                    handleChallengeInput,
+                    desktopSidebarOpen
                 };
             }
         }).mount('#app');
