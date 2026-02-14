@@ -771,6 +771,58 @@ interface gig 0/0                    #  Selects interface
 lldp transmit                        #  Allows sending LLDP packets
 lldp receive                         #  Allows receiving LLDP packets
 show lldp neighbors detail           #  Shows detailed info about neighbors`
+                    },
+                    {
+                        id: 'voip',
+                        title: 'VoIP & Telephony',
+                        rawCode: `@DHCP for VoIP
+ip dhcp pool VOIP_POOL               #  Creates DHCP pool for phones
+network 192.168.10.0 255.255.255.0   #  VoIP Network
+default-router 192.168.10.1          #  Gateway
+option 150 ip 192.168.10.1           #  TFTP Server IP (CME Router)
+
+@Switch Config
+interface range fa 0/1-24            #  Connects to phones
+switchport mode access               #  Sets port mode
+switchport voice vlan 20             #  Separates voice traffic into VLAN 20
+
+@CME Configuration (Router)
+telephony-service                    #  Enters telephony configuration
+max-ephones 10                       #  Max number of physical phones
+max-dn 10                            #  Max number of directory numbers
+ip source-address 192.168.10.1 port 2000 #  Source IP for SCCP registration
+auto assign 1 to 10                  #  Auto-registers phones 1-10
+create cnf-files                     #  Generates configuration files
+
+@Directory Numbers
+ephone-dn 1                          #  Configures Directory Number 1
+number 1001                          #  Assigns extension number 1001
+ephone-dn 2                          #  Configures Directory Number 2
+number 1002                          #  Assigns extension number 1002
+
+@VoIP Routing (Dial-Peer)
+dial-peer voice 1 voip               #  Creates VoIP dial-peer
+destination-pattern 2...             #  Matches numbers starting with 2 (4 digits)
+session target ipv4:10.0.0.2         #  Destination Router IP
+
+@Manual Phone Config
+ephone 1                             #  Manually configures phone 1
+mac-address 0000.1111.2222           #  Binds to specific MAC address
+button 1:1                           #  Maps button 1 to DN 1`
+                    },
+                    {
+                        id: 'vtp',
+                        title: 'VTP (VLAN Trunking Protocol)',
+                        rawCode: `@Configuration
+vtp mode server                      #  Sets VTP mode (server/client/transparent)
+vtp domain CCNA                      #  Sets VTP domain name
+vtp password cisco                   #  Sets VTP password
+vtp version 2                        #  Sets VTP version
+vtp pruning                          #  Enables VTP pruning (saves bandwidth)
+
+@Verification
+show vtp status                      #  Shows VTP mode, domain, and revision
+show vtp counters                    #  Shows VTP advertisement statistics`
                     }
                 ];
 
@@ -1092,6 +1144,58 @@ interface gig 0/0 # Sélectionne l'interface
 lldp transmit # Envoi paquets LLDP
 lldp receive # Réception paquets LLDP
 show lldp neighbors detail # Infos détaillées`
+                    },
+                    {
+                        id: 'voip',
+                        title: 'VoIP & Telephony',
+                        rawCode: `@DHCP pour VoIP
+ip dhcp pool VOIP_POOL # Crée le pool DHCP pour les téléphones
+network 192.168.10.0 255.255.255.0 # Réseau VoIP
+default-router 192.168.10.1 # Passerelle par défaut
+option 150 ip 192.168.10.1 # IP du serveur TFTP (Routeur CME)
+
+@Configuration Switch
+interface range fa 0/1-24 # Connecte aux téléphones
+switchport mode access # Définit le mode du port
+switchport voice vlan 20 # Sépare le trafic voix dans le VLAN 20
+
+@Configuration CME (Routeur)
+telephony-service # Entre dans la configuration téléphonie
+max-ephones 10 # Nombre max de téléphones physiques
+max-dn 10 # Nombre max de numéros d'annuaire
+ip source-address 192.168.10.1 port 2000 # IP source pour l'enregistrement SCCP
+auto assign 1 to 10 # Enregistrement auto des téléphones 1-10
+create cnf-files # Génère les fichiers de configuration
+
+@Numéros d'Annuaire (DN)
+ephone-dn 1 # Configure le Numéro d'Annuaire 1
+number 1001 # Assigne l'extension 1001
+ephone-dn 2 # Configure le Numéro d'Annuaire 2
+number 1002 # Assigne l'extension 1002
+
+@Routage VoIP (Dial-Peer)
+dial-peer voice 1 voip # Crée un dial-peer VoIP
+destination-pattern 2... # Correspond aux numéros commençant par 2
+session target ipv4:10.0.0.2 # IP du Routeur de destination
+
+@Config Manuelle Téléphone
+ephone 1 # Configure manuellement le téléphone 1
+mac-address 0000.1111.2222 # Lie à une adresse MAC spécifique
+button 1:1 # Mappe le bouton 1 au DN 1`
+                    },
+                    {
+                        id: 'vtp',
+                        title: 'VTP (VLAN Trunking Protocol)',
+                        rawCode: `@Configuration
+vtp mode server # Définit le mode VTP (server/client/transparent)
+vtp domain CCNA # Définit le nom de domaine VTP
+vtp password cisco # Définit le mot de passe VTP
+vtp version 2 # Définit la version VTP
+vtp pruning # Active le pruning VTP (économise la bande passante)
+
+@Vérification
+show vtp status # Affiche statut, domaine et révision
+show vtp counters # Affiche les statistiques VTP`
                     }
                 ];
 
@@ -1174,7 +1278,8 @@ show lldp neighbors detail # Infos détaillées`
                         "no shutdown", "ip access-group", "ip access-list", "ip helper-address", 
                         "ipv6 address", "ipv6 unicast-routing", "ipv6 route", "ipv6 router ospf", 
                         "ipv6 dhcp pool", "ipv6 dhcp server", "ipv6 nd", "ntp master", "ntp server", 
-                        "spanning-tree", "cdp run", "lldp run", "clock set", "license boot"
+                        "spanning-tree", "cdp run", "lldp run", "clock set", "license boot",
+                        "telephony-service", "dial-peer", "option", "vtp", "ephone-dn", "ephone"
                     ];
 
                     const methods = [
@@ -1189,7 +1294,9 @@ show lldp neighbors detail # Infos détaillées`
                         "receive", "detail", "router-id", "passive-interface", "default-information", 
                         "originate", "excluded-address", "helper-address", "other-config-flag", 
                         "managed-config-flag", "authentication", "sent-username", "rapid-pvst", 
-                        "portfast", "bpduguard"
+                        "portfast", "bpduguard", "voice", "max-ephones", "max-dn", "source-address", 
+                        "auto assign", "create cnf-files", "number", "button", "destination-pattern", 
+                        "session target", "pruning", "domain"
                     ];
 
                     // Combine and Sort by Length Descending to handle substrings correctly
